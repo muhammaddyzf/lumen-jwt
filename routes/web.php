@@ -16,12 +16,8 @@ $router->get('/', function () use ($router) {
 });
 
 
-$router->post(
-    'auth/login', 
-    [
-       'uses' => 'AuthController@authenticate'
-    ]
-);
+$router->post('auth/login',['uses' => 'AuthController@auth']);
+$router->post('refresh-token',['uses' => 'AuthController@refreshToken']);
 
 $router->group(
     ['middleware' => 'jwt.auth'], 

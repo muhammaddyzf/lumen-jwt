@@ -10,6 +10,9 @@ class UserController extends BaseController
 {
 	function show(Request $request)
 	{
-		dd($request->auth->id);
+		$userId = $request->session->id;
+		$user = User::find($userId);
+
+		return json_encode($user);
 	}
 }

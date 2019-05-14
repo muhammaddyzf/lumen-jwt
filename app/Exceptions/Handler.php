@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use Log;
 use Exception;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -31,9 +32,9 @@ class Handler extends ExceptionHandler
      * @param  \Exception  $exception
      * @return void
      */
-    public function report(Exception $exception)
+    public function report(Exception $e)
     {
-        parent::report($exception);
+        parent::report($e);
     }
 
     /**
@@ -43,8 +44,31 @@ class Handler extends ExceptionHandler
      * @param  \Exception  $exception
      * @return \Illuminate\Http\Response|\Illuminate\Http\JsonResponse
      */
-    public function render($request, Exception $exception)
+    public function render($request, Exception $e)
     {
-        return parent::render($request, $exception);
+        $rendered = parent::render($request, $e);
+        $response = [
+            'error' => [
+                'code' => $rendered->getStatusCode(),
+                'message' => [ $e->getMessage() ]
+            ]
+        ];
+
+      
+        if( $e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+            $response['error']['message'] = [ 'Not Found' ];           
+        }
+
+        if ($e instanceof \Illuminate\Validation\ValidationException) {
+            $response['error']['message'] = [];
+            foreach($e->getResponse()->original as $key => $value) {      
+                $response['error']['message'][] = $value[0];
+            }
+        }
+
+        if($rendered->getStatusCode() === 500) {
+            Log::error($e->getTraceAsString());
+        }
+        return response()->json($response, $rendered->getStatusCode());
     }
 }
